@@ -1,7 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  LayoutAnimation,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -14,51 +12,21 @@ import { FilterTabs } from '@/components/FilterTabs';
 import { TaskInput } from '@/components/TaskInput';
 import { TaskList } from '@/components/TaskList';
 import { Colors } from '@/constants/Colors';
-import { FilterType, Task } from '@/types/task';
-import { generateId } from '@/utils/generateId';
+import { useTasks } from '@/hooks/useTasks';
 
-/** Main screen that manages all task state and renders the task manager UI */
+/** Main screen that delegates all task logic to the useTasks hook */
 export default function TaskManagerScreen() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [filter, setFilter] = useState<FilterType>('all');
-
-  const filteredTasks = useMemo(() => {
-    switch (filter) {
-      case 'active':
-        return tasks.filter((t) => !t.completed);
-      case 'completed':
-        return tasks.filter((t) => t.completed);
-      default:
-        return tasks;
-    }
-  }, [tasks, filter]);
-
-  const activeCount = useMemo(() => tasks.filter((t) => !t.completed).length, [tasks]);
-  const completedCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
-
-  const handleAddTask = useCallback((text: string) => {
-    const newTask: Task = {
-      id: generateId(),
-      text,
-      completed: false,
-      createdAt: Date.now(),
-      priority: 'medium',
-    };
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) => [newTask, ...prev]);
-  }, []);
-
-  const handleToggleTask = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
-    );
-  }, []);
-
-  const handleDeleteTask = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
-  }, []);
+  const {
+    filteredTasks,
+    filter,
+    activeCount,
+    completedCount,
+    totalCount,
+    addTask,
+    toggleTask,
+    deleteTask,
+    setFilter,
+  } = useTasks();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -75,14 +43,14 @@ export default function TaskManagerScreen() {
         </View>
 
         {/* Input */}
-        <TaskInput onAddTask={handleAddTask} />
+        <TaskInput onAddTask={addTask} />
 
         {/* Filter Tabs */}
         <FilterTabs
           filter={filter}
           onFilterChange={setFilter}
           taskCounts={{
-            all: tasks.length,
+            all: totalCount,
             active: activeCount,
             completed: completedCount,
           }}
@@ -91,8 +59,8 @@ export default function TaskManagerScreen() {
         {/* Task List */}
         <TaskList
           tasks={filteredTasks}
-          onToggle={handleToggleTask}
-          onDelete={handleDeleteTask}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
           emptyComponent={<EmptyState filter={filter} />}
         />
       </KeyboardAvoidingView>
