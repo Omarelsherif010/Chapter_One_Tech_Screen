@@ -9,6 +9,7 @@ import {
 
 import { EmptyState } from '@/components/EmptyState';
 import { FilterTabs } from '@/components/FilterTabs';
+import { SearchBar } from '@/components/SearchBar';
 import { TaskInput } from '@/components/TaskInput';
 import { TaskList } from '@/components/TaskList';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -23,10 +24,12 @@ export default function TaskManagerScreen() {
     activeCount,
     completedCount,
     totalCount,
+    searchQuery,
     addTask,
     toggleTask,
     deleteTask,
     setFilter,
+    setSearchQuery,
   } = useTasks();
 
   return (
@@ -46,6 +49,9 @@ export default function TaskManagerScreen() {
         {/* Input */}
         <TaskInput onAddTask={addTask} />
 
+        {/* Search */}
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
+
         {/* Filter Tabs */}
         <FilterTabs
           filter={filter}
@@ -62,7 +68,7 @@ export default function TaskManagerScreen() {
           tasks={filteredTasks}
           onToggle={toggleTask}
           onDelete={deleteTask}
-          emptyComponent={<EmptyState filter={filter} />}
+          emptyComponent={<EmptyState filter={filter} searchQuery={searchQuery} />}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

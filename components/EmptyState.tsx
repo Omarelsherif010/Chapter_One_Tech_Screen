@@ -5,13 +5,17 @@ import { FilterType } from '@/types/task';
 
 interface EmptyStateProps {
   filter: FilterType;
+  searchQuery?: string;
 }
 
-/** Displayed when no tasks match the current filter */
-export function EmptyState({ filter }: EmptyStateProps) {
+/** Displayed when no tasks match the current filter or search */
+export function EmptyState({ filter, searchQuery }: EmptyStateProps) {
   const { colors } = useTheme();
 
   const getMessage = () => {
+    if (searchQuery?.trim()) {
+      return 'No tasks match your search.';
+    }
     switch (filter) {
       case 'active':
         return 'No active tasks. Great job!';
@@ -22,9 +26,11 @@ export function EmptyState({ filter }: EmptyStateProps) {
     }
   };
 
+  const getIcon = () => (searchQuery?.trim() ? '🔍' : '📋');
+
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>📋</Text>
+      <Text style={styles.icon}>{getIcon()}</Text>
       <Text style={[styles.message, { color: colors.textSecondary }]}>{getMessage()}</Text>
     </View>
   );
