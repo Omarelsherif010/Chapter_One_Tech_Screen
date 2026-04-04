@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface TaskInputProps {
   onAddTask: (text: string) => void;
@@ -16,6 +16,7 @@ interface TaskInputProps {
 
 /** Text input with Add button for creating new tasks */
 export function TaskInput({ onAddTask }: TaskInputProps) {
+  const { colors } = useTheme();
   const [inputText, setInputText] = useState('');
   const shakeAnimation = useRef(new Animated.Value(0)).current;
   const inputRef = useRef<TextInput>(null);
@@ -44,24 +45,38 @@ export function TaskInput({ onAddTask }: TaskInputProps) {
 
   return (
     <Animated.View
-      style={[styles.container, { transform: [{ translateX: shakeAnimation }] }]}
+      style={[
+        styles.container,
+        { backgroundColor: colors.surface, borderColor: colors.inputBorder },
+        { transform: [{ translateX: shakeAnimation }] },
+      ]}
     >
       <TextInput
         ref={inputRef}
-        style={styles.input}
+        style={[styles.input, { color: colors.textPrimary }]}
         placeholder="Add a new task..."
-        placeholderTextColor={Colors.inputPlaceholder}
+        placeholderTextColor={colors.inputPlaceholder}
         value={inputText}
         onChangeText={setInputText}
         onSubmitEditing={handleSubmit}
         returnKeyType="done"
       />
       <TouchableOpacity
-        style={[styles.addButton, isInputEmpty && styles.addButtonDisabled]}
+        style={[
+          styles.addButton,
+          { backgroundColor: colors.primary },
+          isInputEmpty && { backgroundColor: colors.border },
+        ]}
         onPress={handleSubmit}
         activeOpacity={0.7}
       >
-        <Text style={[styles.addButtonText, isInputEmpty && styles.addButtonTextDisabled]}>
+        <Text
+          style={[
+            styles.addButtonText,
+            { color: colors.surface },
+            isInputEmpty && { color: colors.textSecondary },
+          ]}
+        >
           Add
         </Text>
       </TouchableOpacity>
@@ -73,10 +88,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.inputBorder,
     paddingHorizontal: 12,
     paddingVertical: 4,
     marginVertical: 12,
@@ -89,25 +102,16 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: Colors.textPrimary,
     paddingVertical: 12,
   },
   addButton: {
-    backgroundColor: Colors.primary,
     borderRadius: 8,
     paddingHorizontal: 18,
     paddingVertical: 10,
     marginLeft: 8,
   },
-  addButtonDisabled: {
-    backgroundColor: Colors.border,
-  },
   addButtonText: {
-    color: Colors.surface,
     fontSize: 16,
     fontWeight: '600',
-  },
-  addButtonTextDisabled: {
-    color: Colors.textSecondary,
   },
 });

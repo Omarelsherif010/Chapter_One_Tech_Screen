@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Task } from '@/types/task';
 
 interface TaskItemProps {
@@ -13,18 +13,19 @@ interface TaskItemProps {
 
 /** A single task row with checkbox, text, swipe-to-delete, and delete button */
 export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
+  const { colors } = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
 
   const renderRightActions = () => (
     <TouchableOpacity
-      style={styles.deleteSwipeAction}
+      style={[styles.deleteSwipeAction, { backgroundColor: colors.danger }]}
       onPress={() => {
         swipeableRef.current?.close();
         onDelete(task.id);
       }}
       activeOpacity={0.8}
     >
-      <Text style={styles.deleteSwipeText}>Delete</Text>
+      <Text style={[styles.deleteSwipeText, { color: colors.surface }]}>Delete</Text>
     </TouchableOpacity>
   );
 
@@ -35,7 +36,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
       rightThreshold={40}
       overshootRight={false}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
         {/* Checkbox */}
         <TouchableOpacity
           onPress={() => onToggle(task.id)}
@@ -45,13 +46,25 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           accessibilityState={{ checked: task.completed }}
           accessibilityLabel={`Mark "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
         >
-          <View style={[styles.checkbox, task.completed && styles.checkboxChecked]}>
-            {task.completed && <Text style={styles.checkmark}>✓</Text>}
+          <View
+            style={[
+              styles.checkbox,
+              { borderColor: colors.border },
+              task.completed && { backgroundColor: colors.primary, borderColor: colors.primary },
+            ]}
+          >
+            {task.completed && <Text style={[styles.checkmark, { color: colors.surface }]}>✓</Text>}
           </View>
         </TouchableOpacity>
 
         {/* Task Text */}
-        <Text style={[styles.taskText, task.completed && styles.taskTextCompleted]}>
+        <Text
+          style={[
+            styles.taskText,
+            { color: colors.textPrimary },
+            task.completed && { textDecorationLine: 'line-through', color: colors.textCompleted, opacity: 0.7 },
+          ]}
+        >
           {task.text}
         </Text>
 
@@ -64,7 +77,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           accessibilityRole="button"
           accessibilityLabel={`Delete "${task.text}"`}
         >
-          <Text style={styles.deleteIcon}>✕</Text>
+          <Text style={[styles.deleteIcon, { color: colors.textSecondary }]}>✕</Text>
         </TouchableOpacity>
       </View>
     </Swipeable>
@@ -75,7 +88,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
@@ -93,29 +105,17 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
   checkmark: {
-    color: Colors.surface,
     fontSize: 14,
     fontWeight: '700',
   },
   taskText: {
     flex: 1,
     fontSize: 16,
-    color: Colors.textPrimary,
     marginLeft: 12,
-  },
-  taskTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: Colors.textCompleted,
-    opacity: 0.7,
   },
   deleteButton: {
     padding: 4,
@@ -123,10 +123,8 @@ const styles = StyleSheet.create({
   },
   deleteIcon: {
     fontSize: 16,
-    color: Colors.textSecondary,
   },
   deleteSwipeAction: {
-    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
@@ -134,7 +132,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   deleteSwipeText: {
-    color: Colors.surface,
     fontSize: 14,
     fontWeight: '600',
   },

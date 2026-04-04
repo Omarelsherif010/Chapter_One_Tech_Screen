@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { FilterType } from '@/types/task';
 
 interface EmptyStateProps {
@@ -9,6 +9,8 @@ interface EmptyStateProps {
 
 /** Displayed when no tasks match the current filter */
 export function EmptyState({ filter }: EmptyStateProps) {
+  const { colors } = useTheme();
+
   const getMessage = () => {
     switch (filter) {
       case 'active':
@@ -23,7 +25,7 @@ export function EmptyState({ filter }: EmptyStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>📋</Text>
-      <Text style={styles.message}>{getMessage()}</Text>
+      <Text style={[styles.message, { color: colors.textSecondary }]}>{getMessage()}</Text>
     </View>
   );
 }
@@ -41,7 +43,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 16,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
 });

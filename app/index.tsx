@@ -11,11 +11,12 @@ import { EmptyState } from '@/components/EmptyState';
 import { FilterTabs } from '@/components/FilterTabs';
 import { TaskInput } from '@/components/TaskInput';
 import { TaskList } from '@/components/TaskList';
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useTasks } from '@/hooks/useTasks';
 
 /** Main screen that delegates all task logic to the useTasks hook */
 export default function TaskManagerScreen() {
+  const { colors } = useTheme();
   const {
     filteredTasks,
     filter,
@@ -29,15 +30,15 @@ export default function TaskManagerScreen() {
   } = useTasks();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Task Manager</Text>
-          <Text style={styles.counter}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Task Manager</Text>
+          <Text style={[styles.counter, { color: colors.textSecondary }]}>
             {activeCount} task{activeCount !== 1 ? 's' : ''} remaining
           </Text>
         </View>
@@ -71,7 +72,6 @@ export default function TaskManagerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -84,11 +84,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.textPrimary,
   },
   counter: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginTop: 4,
   },
 });
