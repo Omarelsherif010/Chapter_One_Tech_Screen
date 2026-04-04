@@ -17,6 +17,7 @@ import { Colors } from '@/constants/Colors';
 import { FilterType, Task } from '@/types/task';
 import { generateId } from '@/utils/generateId';
 
+/** Main screen that manages all task state and renders the task manager UI */
 export default function TaskManagerScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');

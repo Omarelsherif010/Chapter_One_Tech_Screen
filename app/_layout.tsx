@@ -9,6 +9,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+/** Root layout wrapping the app with gesture handler support and status bar configuration */
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

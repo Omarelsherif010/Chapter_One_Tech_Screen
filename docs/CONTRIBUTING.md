@@ -26,7 +26,7 @@ git checkout -b fix/bug-description
 
 Write concise commit messages that explain **why**, not just **what**.
 
-```
+```text
 <type>: <short description>
 
 <optional body explaining context>
@@ -35,7 +35,7 @@ Write concise commit messages that explain **why**, not just **what**.
 **Types:** `feat`, `fix`, `docs`, `refactor`, `style`, `test`, `chore`
 
 **Examples:**
-```
+```text
 feat: add swipe-to-delete on task items
 fix: prevent empty tasks from being created
 docs: add architecture documentation

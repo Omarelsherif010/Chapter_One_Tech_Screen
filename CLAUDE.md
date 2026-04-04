@@ -23,12 +23,11 @@ npx expo start                  # Start Expo dev server
 npx expo start --ios            # Run on iOS simulator
 npx expo start --android        # Run on Android emulator
 
-# Testing
-npm test                        # Run test suite
-npm test -- --watchAll=false     # Run tests once (CI mode)
-
 # Linting
-npm run lint
+npx expo lint
+
+# Type checking
+npx tsc --noEmit
 ```
 
 ## Architecture

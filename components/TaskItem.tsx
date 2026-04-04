@@ -41,6 +41,9 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           onPress={() => onToggle(task.id)}
           style={styles.checkboxTouchArea}
           activeOpacity={0.6}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: task.completed }}
+          accessibilityLabel={`Mark "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
         >
           <View style={[styles.checkbox, task.completed && styles.checkboxChecked]}>
             {task.completed && <Text style={styles.checkmark}>✓</Text>}
@@ -58,6 +61,8 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           style={styles.deleteButton}
           activeOpacity={0.6}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete "${task.text}"`}
         >
           <Text style={styles.deleteIcon}>✕</Text>
         </TouchableOpacity>
