@@ -11,10 +11,17 @@ interface TaskItemProps {
   onDelete: (id: string) => void;
 }
 
-/** A single task row with checkbox, text, swipe-to-delete, and delete button */
+const PRIORITY_COLOR_KEY = {
+  high: 'priorityHigh',
+  medium: 'priorityMedium',
+  low: 'priorityLow',
+} as const;
+
+/** A single task row with priority dot, checkbox, text, swipe-to-delete, and delete button */
 export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
   const { colors } = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
+  const priorityColor = colors[PRIORITY_COLOR_KEY[task.priority]];
 
   const renderRightActions = () => (
     <TouchableOpacity
@@ -37,6 +44,9 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
       overshootRight={false}
     >
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        {/* Priority Dot */}
+        <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
+
         {/* Checkbox */}
         <TouchableOpacity
           onPress={() => onToggle(task.id)}
@@ -96,6 +106,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
+  },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
   checkboxTouchArea: {
     padding: 4,
