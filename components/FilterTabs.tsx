@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { FilterType } from '@/types/task';
 
 interface FilterTabsProps {
@@ -17,6 +17,8 @@ const FILTERS: { key: FilterType; label: string }[] = [
 
 /** Horizontal filter tabs for All / Active / Completed */
 export function FilterTabs({ filter, onFilterChange, taskCounts }: FilterTabsProps) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
       {FILTERS.map(({ key, label }) => {
@@ -24,11 +26,21 @@ export function FilterTabs({ filter, onFilterChange, taskCounts }: FilterTabsPro
         return (
           <TouchableOpacity
             key={key}
-            style={[styles.tab, isActive && styles.tabActive]}
+            style={[
+              styles.tab,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              isActive && { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+            ]}
             onPress={() => onFilterChange(key)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                { color: colors.textSecondary },
+                isActive && { color: colors.primary },
+              ]}
+            >
               {label} ({taskCounts[key]})
             </Text>
           </TouchableOpacity>
@@ -48,20 +60,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  tabActive: {
-    backgroundColor: Colors.primaryLight,
-    borderColor: Colors.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  tabTextActive: {
-    color: Colors.primary,
   },
 });

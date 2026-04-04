@@ -36,7 +36,7 @@ Then:
 
 ## Project Structure
 
-```
+```text
 app/
 ├── _layout.tsx          # Root layout with gesture handler and status bar
 └── index.tsx            # Main screen — owns all task state and handlers

@@ -1,7 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  LayoutAnimation,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -11,76 +9,56 @@ import {
 
 import { EmptyState } from '@/components/EmptyState';
 import { FilterTabs } from '@/components/FilterTabs';
+import { SearchBar } from '@/components/SearchBar';
 import { TaskInput } from '@/components/TaskInput';
 import { TaskList } from '@/components/TaskList';
-import { Colors } from '@/constants/Colors';
-import { FilterType, Task } from '@/types/task';
-import { generateId } from '@/utils/generateId';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useTasks } from '@/hooks/useTasks';
 
+/** Main screen that delegates all task logic to the useTasks hook */
 export default function TaskManagerScreen() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [filter, setFilter] = useState<FilterType>('all');
-
-  const filteredTasks = useMemo(() => {
-    switch (filter) {
-      case 'active':
-        return tasks.filter((t) => !t.completed);
-      case 'completed':
-        return tasks.filter((t) => t.completed);
-      default:
-        return tasks;
-    }
-  }, [tasks, filter]);
-
-  const activeCount = useMemo(() => tasks.filter((t) => !t.completed).length, [tasks]);
-  const completedCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
-
-  const handleAddTask = useCallback((text: string) => {
-    const newTask: Task = {
-      id: generateId(),
-      text,
-      completed: false,
-      createdAt: Date.now(),
-    };
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) => [newTask, ...prev]);
-  }, []);
-
-  const handleToggleTask = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
-    );
-  }, []);
-
-  const handleDeleteTask = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
-  }, []);
+  const { colors } = useTheme();
+  const {
+    filteredTasks,
+    filter,
+    activeCount,
+    completedCount,
+    totalCount,
+    searchQuery,
+    addTask,
+    toggleTask,
+    deleteTask,
+    editTask,
+    setFilter,
+    setSearchQuery,
+  } = useTasks();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.content}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Task Manager</Text>
-          <Text style={styles.counter}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Task Manager</Text>
+          <Text style={[styles.counter, { color: colors.textSecondary }]}>
             {activeCount} task{activeCount !== 1 ? 's' : ''} remaining
           </Text>
         </View>
 
         {/* Input */}
-        <TaskInput onAddTask={handleAddTask} />
+        <TaskInput onAddTask={addTask} />
+
+        {/* Search */}
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
         {/* Filter Tabs */}
         <FilterTabs
           filter={filter}
           onFilterChange={setFilter}
           taskCounts={{
-            all: tasks.length,
+            all: totalCount,
             active: activeCount,
             completed: completedCount,
           }}
@@ -89,9 +67,10 @@ export default function TaskManagerScreen() {
         {/* Task List */}
         <TaskList
           tasks={filteredTasks}
-          onToggle={handleToggleTask}
-          onDelete={handleDeleteTask}
-          emptyComponent={<EmptyState filter={filter} />}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+          onEdit={editTask}
+          emptyComponent={<EmptyState filter={filter} searchQuery={searchQuery} />}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -101,7 +80,6 @@ export default function TaskManagerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -114,11 +92,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.textPrimary,
   },
   counter: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginTop: 4,
   },
 });
