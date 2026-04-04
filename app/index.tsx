@@ -28,6 +28,7 @@ export default function TaskManagerScreen() {
     addTask,
     toggleTask,
     deleteTask,
+    editTask,
     setFilter,
     setSearchQuery,
   } = useTasks();
@@ -68,6 +69,7 @@ export default function TaskManagerScreen() {
           tasks={filteredTasks}
           onToggle={toggleTask}
           onDelete={deleteTask}
+          onEdit={editTask}
           emptyComponent={<EmptyState filter={filter} searchQuery={searchQuery} />}
         />
       </KeyboardAvoidingView>

@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
 import { useTheme } from '@/contexts/ThemeContext';
@@ -9,6 +9,7 @@ interface TaskItemProps {
   task: Task;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string, newText: string) => void;
 }
 
 const PRIORITY_COLOR_KEY = {
@@ -17,11 +18,23 @@ const PRIORITY_COLOR_KEY = {
   low: 'priorityLow',
 } as const;
 
-/** A single task row with priority dot, checkbox, text, swipe-to-delete, and delete button */
-export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
+/** A single task row with priority dot, checkbox, inline edit, swipe-to-delete, and delete button */
+export function TaskItem({ task, onToggle, onDelete, onEdit }: TaskItemProps) {
   const { colors } = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(task.text);
   const priorityColor = colors[PRIORITY_COLOR_KEY[task.priority]];
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== task.text) {
+      onEdit(task.id, trimmed);
+    } else {
+      setEditText(task.text);
+    }
+    setIsEditing(false);
+  };
 
   const renderRightActions = () => (
     <TouchableOpacity
@@ -42,6 +55,7 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
       renderRightActions={renderRightActions}
       rightThreshold={40}
       overshootRight={false}
+      enabled={!isEditing}
     >
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
         {/* Priority Dot */}
@@ -67,16 +81,39 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           </View>
         </TouchableOpacity>
 
-        {/* Task Text */}
-        <Text
-          style={[
-            styles.taskText,
-            { color: colors.textPrimary },
-            task.completed && { textDecorationLine: 'line-through', color: colors.textCompleted, opacity: 0.7 },
-          ]}
-        >
-          {task.text}
-        </Text>
+        {/* Task Text / Edit Input */}
+        {isEditing ? (
+          <TextInput
+            style={[styles.taskText, styles.editInput, { color: colors.textPrimary, borderBottomColor: colors.primary }]}
+            value={editText}
+            onChangeText={setEditText}
+            onSubmitEditing={handleSaveEdit}
+            onBlur={handleSaveEdit}
+            autoFocus
+            returnKeyType="done"
+            selectTextOnFocus
+          />
+        ) : (
+          <TouchableOpacity
+            style={styles.textTouchArea}
+            onLongPress={() => {
+              setEditText(task.text);
+              setIsEditing(true);
+            }}
+            activeOpacity={0.8}
+            accessibilityHint="Long press to edit"
+          >
+            <Text
+              style={[
+                styles.taskText,
+                { color: colors.textPrimary },
+                task.completed && { textDecorationLine: 'line-through', color: colors.textCompleted, opacity: 0.7 },
+              ]}
+            >
+              {task.text}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Delete Icon Button */}
         <TouchableOpacity
@@ -128,10 +165,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  textTouchArea: {
+    flex: 1,
+  },
   taskText: {
     flex: 1,
     fontSize: 16,
     marginLeft: 12,
+  },
+  editInput: {
+    borderBottomWidth: 1,
+    paddingVertical: 2,
   },
   deleteButton: {
     padding: 4,
