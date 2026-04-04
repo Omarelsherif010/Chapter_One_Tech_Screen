@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { LayoutAnimation } from 'react-native';
+import { Alert, LayoutAnimation } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 
 import { FilterType, PRIORITY_ORDER, Priority, Task } from '@/types/task';
 import { generateId } from '@/utils/generateId';
@@ -78,11 +79,13 @@ export function useTasks() {
       createdAt: Date.now(),
       priority,
     };
+    Haptics.selectionAsync();
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setTasks((prev) => [newTask, ...prev]);
   }, []);
 
   const toggleTask = useCallback((id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setTasks((prev) =>
       prev.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task))
@@ -90,8 +93,18 @@ export function useTasks() {
   }, []);
 
   const deleteTask = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setTasks((prev) => prev.filter((task) => task.id !== id));
+        },
+      },
+    ]);
   }, []);
 
   const editTask = useCallback((id: string, newText: string) => {
