@@ -42,6 +42,7 @@ export default function TaskManagerScreen() {
       text,
       completed: false,
       createdAt: Date.now(),
+      priority: 'medium',
     };
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setTasks((prev) => [newTask, ...prev]);
