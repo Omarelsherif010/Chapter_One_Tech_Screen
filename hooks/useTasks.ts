@@ -1,14 +1,49 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutAnimation } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { FilterType, PRIORITY_ORDER, Priority, Task } from '@/types/task';
 import { generateId } from '@/utils/generateId';
 
-/** Custom hook encapsulating all task state, CRUD operations, filtering, and search */
+const STORAGE_KEY = '@task_manager/tasks';
+
+/** Custom hook encapsulating all task state, persistence, CRUD operations, filtering, and search */
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load tasks from AsyncStorage on mount
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed: Task[] = JSON.parse(stored);
+          // Defensive migration: ensure priority exists on all tasks
+          const migrated = parsed.map((t) => ({
+            ...t,
+            priority: t.priority ?? ('medium' as Priority),
+          }));
+          setTasks(migrated);
+        }
+      } catch {
+        // On parse failure, start fresh
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadTasks();
+  }, []);
+
+  // Persist tasks to AsyncStorage on every change (after initial load)
+  useEffect(() => {
+    if (!isLoaded) return;
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)).catch(() => {
+      // Silent fail — persistence is best-effort
+    });
+  }, [tasks, isLoaded]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks;
@@ -70,6 +105,7 @@ export function useTasks() {
     filteredTasks,
     filter,
     searchQuery,
+    isLoaded,
     activeCount,
     completedCount,
     totalCount: tasks.length,
