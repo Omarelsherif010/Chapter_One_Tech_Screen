@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -25,6 +26,7 @@ export default function TaskManagerScreen() {
     completedCount,
     totalCount,
     searchQuery,
+    isLoaded,
     addTask,
     toggleTask,
     deleteTask,
@@ -32,6 +34,15 @@ export default function TaskManagerScreen() {
     setFilter,
     setSearchQuery,
   } = useTasks();
+
+  // Show loading indicator while tasks are being hydrated from storage
+  if (!isLoaded) {
+    return (
+      <SafeAreaView style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -80,6 +91,10 @@ export default function TaskManagerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
