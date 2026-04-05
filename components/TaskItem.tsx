@@ -1,30 +1,51 @@
-import { useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Task } from '@/types/task';
 
 interface TaskItemProps {
   task: Task;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string, newText: string) => void;
 }
 
-/** A single task row with checkbox, text, swipe-to-delete, and delete button */
-export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
+const PRIORITY_COLOR_KEY = {
+  high: 'priorityHigh',
+  medium: 'priorityMedium',
+  low: 'priorityLow',
+} as const;
+
+/** A single task row with priority dot, checkbox, inline edit, swipe-to-delete, and delete button */
+export function TaskItem({ task, onToggle, onDelete, onEdit }: TaskItemProps) {
+  const { colors } = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(task.text);
+  const priorityColor = colors[PRIORITY_COLOR_KEY[task.priority]];
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== task.text) {
+      onEdit(task.id, trimmed);
+    } else {
+      setEditText(task.text);
+    }
+    setIsEditing(false);
+  };
 
   const renderRightActions = () => (
     <TouchableOpacity
-      style={styles.deleteSwipeAction}
+      style={[styles.deleteSwipeAction, { backgroundColor: colors.danger }]}
       onPress={() => {
         swipeableRef.current?.close();
         onDelete(task.id);
       }}
       activeOpacity={0.8}
     >
-      <Text style={styles.deleteSwipeText}>Delete</Text>
+      <Text style={[styles.deleteSwipeText, { color: colors.surface }]}>Delete</Text>
     </TouchableOpacity>
   );
 
@@ -34,23 +55,65 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
       renderRightActions={renderRightActions}
       rightThreshold={40}
       overshootRight={false}
+      enabled={!isEditing}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        {/* Priority Dot */}
+        <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
+
         {/* Checkbox */}
         <TouchableOpacity
           onPress={() => onToggle(task.id)}
           style={styles.checkboxTouchArea}
           activeOpacity={0.6}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: task.completed }}
+          accessibilityLabel={`Mark "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
         >
-          <View style={[styles.checkbox, task.completed && styles.checkboxChecked]}>
-            {task.completed && <Text style={styles.checkmark}>✓</Text>}
+          <View
+            style={[
+              styles.checkbox,
+              { borderColor: colors.border },
+              task.completed && { backgroundColor: colors.primary, borderColor: colors.primary },
+            ]}
+          >
+            {task.completed && <Text style={[styles.checkmark, { color: colors.surface }]}>✓</Text>}
           </View>
         </TouchableOpacity>
 
-        {/* Task Text */}
-        <Text style={[styles.taskText, task.completed && styles.taskTextCompleted]}>
-          {task.text}
-        </Text>
+        {/* Task Text / Edit Input */}
+        {isEditing ? (
+          <TextInput
+            style={[styles.taskText, styles.editInput, { color: colors.textPrimary, borderBottomColor: colors.primary }]}
+            value={editText}
+            onChangeText={setEditText}
+            onSubmitEditing={handleSaveEdit}
+            onBlur={handleSaveEdit}
+            autoFocus
+            returnKeyType="done"
+            selectTextOnFocus
+          />
+        ) : (
+          <TouchableOpacity
+            style={styles.textTouchArea}
+            onLongPress={() => {
+              setEditText(task.text);
+              setIsEditing(true);
+            }}
+            activeOpacity={0.8}
+            accessibilityHint="Long press to edit"
+          >
+            <Text
+              style={[
+                styles.taskText,
+                { color: colors.textPrimary },
+                task.completed && { textDecorationLine: 'line-through', color: colors.textCompleted, opacity: 0.7 },
+              ]}
+            >
+              {task.text}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Delete Icon Button */}
         <TouchableOpacity
@@ -58,8 +121,10 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           style={styles.deleteButton}
           activeOpacity={0.6}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete "${task.text}"`}
         >
-          <Text style={styles.deleteIcon}>✕</Text>
+          <Text style={[styles.deleteIcon, { color: colors.textSecondary }]}>✕</Text>
         </TouchableOpacity>
       </View>
     </Swipeable>
@@ -70,7 +135,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
@@ -80,6 +144,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
   checkboxTouchArea: {
     padding: 4,
   },
@@ -88,29 +158,24 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
   checkmark: {
-    color: Colors.surface,
     fontSize: 14,
     fontWeight: '700',
+  },
+  textTouchArea: {
+    flex: 1,
   },
   taskText: {
     flex: 1,
     fontSize: 16,
-    color: Colors.textPrimary,
     marginLeft: 12,
   },
-  taskTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: Colors.textCompleted,
-    opacity: 0.7,
+  editInput: {
+    borderBottomWidth: 1,
+    paddingVertical: 2,
   },
   deleteButton: {
     padding: 4,
@@ -118,10 +183,8 @@ const styles = StyleSheet.create({
   },
   deleteIcon: {
     fontSize: 16,
-    color: Colors.textSecondary,
   },
   deleteSwipeAction: {
-    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
@@ -129,7 +192,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   deleteSwipeText: {
-    color: Colors.surface,
     fontSize: 14,
     fontWeight: '600',
   },

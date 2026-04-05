@@ -8,8 +8,10 @@ This is a React Native Task Manager app built as a tech screen for Chapter One. 
 
 ## Tech Stack
 
-- React Native with Expo
-- Local component state only (useState) — no Redux, Context API, or external storage
+- React Native with Expo (SDK 54), TypeScript, expo-router
+- Task state managed via `useTasks()` custom hook (useState internally), persisted with AsyncStorage
+- Theme managed via React Context (`ThemeProvider` / `useTheme()`) for dark mode support
+- No Redux or external state management libraries
 
 ## Common Commands
 
@@ -23,20 +25,21 @@ npx expo start                  # Start Expo dev server
 npx expo start --ios            # Run on iOS simulator
 npx expo start --android        # Run on Android emulator
 
-# Testing
-npm test                        # Run test suite
-npm test -- --watchAll=false     # Run tests once (CI mode)
-
 # Linting
-npm run lint
+npx expo lint
+
+# Type checking
+npx tsc --noEmit
 ```
 
 ## Architecture
 
 - **Expo-managed workflow** — no native code ejection
-- **Component-based structure**: separate components for task input, individual task items, and task list
-- **State lives at the top level** — tasks array managed via `useState` in the root/app component, passed down via props
+- **Custom hook (`useTasks`)** — all task state, CRUD, persistence, filtering, sorting, haptics, and delete confirmation in `hooks/useTasks.ts`
+- **ThemeContext** — `contexts/ThemeContext.tsx` provides system-aware dark/light colors to all components via `useTheme()`
+- **Component-based structure** — separate components for task input, items, list, search, filters, and empty state
 - **FlatList** for rendering the task list (not ScrollView)
+- **AsyncStorage** — tasks persist across app restarts with `isLoaded` guard to prevent data loss on mount
 
 ## Assessment Requirements
 

@@ -8,16 +8,17 @@ interface TaskListProps {
   tasks: Task[];
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string, newText: string) => void;
   emptyComponent: React.ReactElement;
 }
 
 /** Renders the scrollable task list using FlatList */
-export function TaskList({ tasks, onToggle, onDelete, emptyComponent }: TaskListProps) {
+export function TaskList({ tasks, onToggle, onDelete, onEdit, emptyComponent }: TaskListProps) {
   const renderItem = useCallback(
     ({ item }: { item: Task }) => (
-      <TaskItem task={item} onToggle={onToggle} onDelete={onDelete} />
+      <TaskItem task={item} onToggle={onToggle} onDelete={onDelete} onEdit={onEdit} />
     ),
-    [onToggle, onDelete]
+    [onToggle, onDelete, onEdit]
   );
 
   const keyExtractor = useCallback((item: Task) => item.id, []);
