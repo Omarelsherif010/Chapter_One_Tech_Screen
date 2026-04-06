@@ -2,6 +2,18 @@
 
 A polished Task Manager app built with React Native and Expo, featuring persistent storage, dark mode, task priorities, search, inline editing, and haptic feedback.
 
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/01-empty-state.png" width="180" alt="Empty State" />
+  <img src="assets/screenshots/02-task-list.png" width="180" alt="Task List with Priorities" />
+  <img src="assets/screenshots/03-completed-task.png" width="180" alt="Completed Task" />
+  <img src="assets/screenshots/04-inline-edit.png" width="180" alt="Inline Editing" />
+  <img src="assets/screenshots/05-delete-confirmation.png" width="180" alt="Delete Confirmation" />
+</p>
+
+*From left to right: Empty state, Task list with priorities, Completed task, Inline editing, Delete confirmation dialog*
+
 ## Features
 
 ### Core Features (Required)
