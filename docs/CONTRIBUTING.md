@@ -79,9 +79,11 @@ Before every commit, verify:
 ### File Organization
 
 - **Components** go in `components/` -- one component per file, named exports
+- **Hooks** go in `hooks/` -- custom hooks encapsulating business logic
+- **Contexts** go in `contexts/` -- React Context providers and consumer hooks
 - **Types** go in `types/` -- shared interfaces and type aliases
 - **Utilities** go in `utils/` -- pure helper functions
-- **Constants** go in `constants/` -- configuration values, color palette
+- **Constants** go in `constants/` -- configuration values, color palettes
 
 ### Component Guidelines
 
@@ -94,13 +96,14 @@ Before every commit, verify:
 ### Styling
 
 - Use `StyleSheet.create()` at the bottom of each component file
-- Reference colors from `constants/Colors.ts` -- never hardcode color values
+- Use `useTheme().colors` for dynamic theme colors -- never import `Colors` directly in components
 - Use the spacing scale: multiples of 4 (4, 8, 12, 16, 20, 24, 32)
 
 ### State Management
 
-- All task state lives in `app/index.tsx`
-- Child components receive data and callbacks via props
+- All task state lives in `hooks/useTasks.ts` custom hook
+- Theme state provided via `contexts/ThemeContext.tsx` (`useTheme()`)
+- Screen component (`app/index.tsx`) consumes both hooks and passes data/callbacks via props
 - Use `useCallback` for handlers passed as props
 - Use `useMemo` for derived/computed values
 - Use functional updates for state: `setTasks(prev => ...)`
