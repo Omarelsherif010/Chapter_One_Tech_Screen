@@ -2,99 +2,141 @@
 
 ## Overview
 
-The Task Manager is a single-screen React Native app built with Expo and expo-router. It follows a top-down unidirectional data flow: all state lives in the root screen component and flows down to child components via props.
+The Task Manager is a single-screen React Native app built with Expo and expo-router. It uses a custom `useTasks()` hook for all business logic, `ThemeContext` for dark mode, and AsyncStorage for persistence. Data flows unidirectionally from the hook through props to child components.
 
 ## Component Tree
 
-```
+```text
 app/_layout.tsx
+│   ThemeProvider (dark mode context)
 │   GestureHandlerRootView (required for swipe gestures)
 │   Stack navigator (headerShown: false)
-│   StatusBar
+│   ThemedStatusBar (adapts to light/dark)
 │
 └── app/index.tsx (TaskManagerScreen)
-    │   State: tasks[], filter
-    │   Derived: filteredTasks, activeCount, completedCount
-    │   Handlers: handleAddTask, handleToggleTask, handleDeleteTask
+    │   Consumes: useTasks() hook, useTheme() hook
+    │   Shows ActivityIndicator while isLoaded=false
     │
     ├── TaskInput
-    │     Props: onAddTask
-    │     Local state: inputText
-    │     Animations: shake on invalid submit
+    │     Props: onAddTask(text, priority)
+    │     Local state: inputText, priority
+    │     Features: priority selector (H/M/L pills), shake animation
+    │
+    ├── SearchBar
+    │     Props: value, onChangeText
+    │     Features: clear button, search icon
     │
     ├── FilterTabs
     │     Props: filter, onFilterChange, taskCounts
     │     Pure component (no local state)
     │
     └── TaskList
-          Props: tasks, onToggle, onDelete, emptyComponent
+          Props: tasks, onToggle, onDelete, onEdit, emptyComponent
           │
           ├── TaskItem (rendered per task via FlatList)
-          │     Props: task, onToggle, onDelete
-          │     Features: checkbox toggle, swipe-to-delete, delete button
+          │     Props: task, onToggle, onDelete, onEdit
+          │     Local state: isEditing, editText
+          │     Features: priority dot, checkbox, inline edit (long-press),
+          │               swipe-to-delete, delete button, accessibility labels
           │
           └── EmptyState (via ListEmptyComponent)
-                Props: filter
-                Shows context-aware message
+                Props: filter, searchQuery
+                Shows context-aware message (no tasks / no results / no active / no completed)
 ```
 
 ## Data Flow
 
-```
-User Action          Handler (index.tsx)         State Update           Re-render
-───────────────────────────────────────────────────────────────────────────────────
-Type + tap "Add"  →  handleAddTask(text)      →  prepend to tasks[]  →  TaskList updates
-Tap checkbox      →  handleToggleTask(id)     →  toggle completed    →  TaskItem restyled
-Tap ✕ / swipe     →  handleDeleteTask(id)     →  filter out by id   →  TaskList updates
-Tap filter tab    →  setFilter(filterType)    →  filteredTasks       →  TaskList re-filters
+```text
+User Action            Hook (useTasks)              State Update              UI Update
+──────────────────────────────────────────────────────────────────────────────────────────
+Type + tap "Add"    →  addTask(text, priority)    →  prepend to tasks[]     →  list updates + haptic
+Tap checkbox        →  toggleTask(id)             →  toggle completed       →  item restyled + haptic
+Tap X / swipe       →  deleteTask(id)             →  Alert → filter out    →  list updates + haptic
+Long-press text     →  (local TaskItem state)     →  isEditing=true        →  inline TextInput
+Submit edit         →  editTask(id, newText)      →  update text           →  item re-renders
+Tap filter tab      →  setFilter(filterType)      →  filteredTasks recomputes → list re-filters
+Type in search      →  setSearchQuery(text)       →  filteredTasks recomputes → list re-filters
+App launch          →  AsyncStorage.getItem()     →  setTasks(stored)      →  list populates
+Any task mutation   →  AsyncStorage.setItem()     →  (persisted to disk)   →  (no UI change)
 ```
 
-All state mutations happen via functional updates (`setTasks(prev => ...)`) to avoid stale state issues with rapid interactions.
+## useTasks() Hook (`hooks/useTasks.ts`)
+
+The central piece of the architecture. Encapsulates:
+
+| Concern | Implementation |
+|---------|----------------|
+| Task state | `useState<Task[]>` |
+| Filter state | `useState<FilterType>` |
+| Search state | `useState<string>` |
+| Loading state | `useState<boolean>` (`isLoaded`) |
+| Derived data | `useMemo` for `filteredTasks`, `activeCount`, `completedCount` |
+| CRUD handlers | `useCallback` for `addTask`, `toggleTask`, `deleteTask`, `editTask` |
+| Persistence | `useEffect` to load on mount, save on every mutation |
+| Haptics | `expo-haptics` calls inside handlers |
+| Delete confirm | `Alert.alert` inside `deleteTask` |
+| Sorting | Priority-based (high→medium→low), completed last, newest first |
+
+### AsyncStorage Guard Pattern
+
+```text
+Mount → loadTasks() → setTasks(stored) → setIsLoaded(true)
+                                                    ↓
+                                            Save effect now active
+                                            (skips while isLoaded=false)
+```
+
+This prevents the initial empty `tasks=[]` from overwriting stored data before hydration completes.
+
+## Dark Mode (`contexts/ThemeContext.tsx`)
+
+- `ThemeProvider` wraps the app at the root layout level
+- Uses React Native's `useColorScheme()` to detect system preference
+- Provides `{ colors, isDark }` via `useTheme()` hook
+- `LightColors` and `DarkColors` defined in `constants/Colors.ts` with matching keys
+- Components use `useTheme()` + inline style overrides: `[styles.base, { backgroundColor: colors.surface }]`
+- `StatusBar` style adapts via a `ThemedStatusBar` child component (can't call `useTheme()` in the provider itself)
 
 ## Data Model
 
 ```typescript
+type Priority = 'high' | 'medium' | 'low';
+
+const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
+
 interface Task {
   id: string;          // Generated via Date.now() + Math.random()
   text: string;        // User-provided description
   completed: boolean;  // Toggle state
   createdAt: number;   // Timestamp for ordering
+  priority: Priority;  // Affects sort order and visual indicator
 }
 
 type FilterType = 'all' | 'active' | 'completed';
 ```
 
-## State Management Strategy
+## Filtering + Search + Sort Pipeline
 
-- **No external state libraries.** All state is managed via `useState` in `app/index.tsx`.
-- **Derived values** (`filteredTasks`, `activeCount`, `completedCount`) are computed with `useMemo` to avoid unnecessary recalculations.
-- **Handlers** are wrapped in `useCallback` to maintain referential equality and prevent unnecessary child re-renders.
-- **FlatList** uses `useCallback` for `renderItem` and `keyExtractor` for the same reason.
+Applied in a single `useMemo` in the hook:
 
-## Animations
+1. **Filter tab** — show all, only active, or only completed
+2. **Search** — case-insensitive substring match on task text (within filtered results)
+3. **Sort** — incomplete first (by priority, then newest), completed last (by newest)
 
-Two animation strategies are used:
-
-1. **LayoutAnimation** (list transitions) -- Called via `LayoutAnimation.configureNext()` before every `setTasks` call that adds or removes items. This provides automatic smooth transitions for list changes. On Android, requires `UIManager.setLayoutAnimationEnabledExperimental(true)` in `_layout.tsx`.
-
-2. **Animated API** (input shake) -- A `translateX` animation sequence in `TaskInput` that triggers when the user tries to submit an empty task. Uses `useNativeDriver: true` for performance.
-
-## Routing
-
-expo-router provides file-based routing, but this is a single-screen app:
-
-- `app/_layout.tsx` -- Root layout (Stack navigator, gesture handler wrapper)
-- `app/index.tsx` -- The only screen
-
-The `(tabs)` layout from the default template was removed since the app has a single screen.
+Filter tab counts always show **unfiltered** totals so users see the full distribution regardless of search.
 
 ## Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| State in root only | Simple prop drilling works for a small component tree; demonstrates state/props fundamentals |
-| FlatList over ScrollView | Virtualized rendering, proper list semantics, built-in empty state support |
-| Swipeable + delete button | Two delete affordances: gesture-based (polished) and button (discoverable) |
-| No UUID library | `Date.now() + Math.random()` is sufficient for local-only state with no persistence |
-| Custom StyleSheet | Demonstrates understanding of RN styling without hiding it behind a library |
-| GestureHandlerRootView in layout | Required for react-native-gesture-handler; placed at root to ensure all screens can use gestures |
+| Custom hook, not Context, for task state | Simpler than Context for single-screen app; demonstrates hooks expertise |
+| Context for theming only | Theming is a cross-cutting UI concern needed by every component — legitimate Context use |
+| AsyncStorage (not SQLite/MMKV) | Simplest persistence for a small dataset; included with Expo |
+| `isLoaded` guard | Prevents data loss from race condition on mount |
+| Haptics in the hook, not in components | Centralizes feedback logic; components stay pure UI |
+| Alert.alert for delete confirm | Native dialog, no extra dependency, consistent with platform UX |
+| Priority as required field | Avoids undefined checks; defaults to 'medium' at creation |
+| Defensive migration on load | `priority ?? 'medium'` when loading stored tasks — forward-compatible schema |
+| Swipeable disabled during edit | Prevents gesture conflict when editing task text inline |
+| FlatList over ScrollView | Virtualized rendering, built-in empty state, proper list semantics |
+| GestureHandlerRootView at root | Required for react-native-gesture-handler; placed at root so all screens can use gestures |

@@ -1,16 +1,28 @@
 # Task Manager - Chapter One Tech Screen
 
-A simple and polished Task Manager app built with React Native and Expo.
+A polished Task Manager app built with React Native and Expo, featuring persistent storage, dark mode, task priorities, search, inline editing, and haptic feedback.
 
 ## Features
 
-- **Add Task** — Create tasks with a text description
+### Core Features (Required)
+- **Add Task** — Create tasks with a text description and priority level
 - **Mark Complete** — Toggle tasks between active and completed (visual strikethrough + opacity change)
-- **Delete Task** — Remove tasks via the delete button or swipe-to-delete gesture
-- **Filter Tasks** — Switch between All, Active, and Done views with live counts
+- **Delete Task** — Remove tasks via the delete button or swipe-to-delete gesture, with confirmation dialog
+- **Task List** — FlatList displaying all tasks, sorted by priority and completion status
+
+### Extra Features (Beyond Requirements)
+- **Persistent Storage** — Tasks are saved to device storage via AsyncStorage and survive app restarts
+- **Dark Mode** — Automatic system theme detection with full light/dark color palettes
+- **Task Priority** — High/Medium/Low priority with colored indicators (red/orange/green) and priority-based sorting
+- **Search** — Search bar to filter tasks by text, works in combination with filter tabs
+- **Inline Edit** — Long-press a task to edit its text inline
+- **Filter Tabs** — Switch between All, Active, and Done views with live counts
+- **Haptic Feedback** — Tactile vibrations on add, complete, and delete actions
+- **Delete Confirmation** — Alert dialog prevents accidental task deletion
 - **Animations** — Smooth layout animations on add/delete, shake animation on invalid input
-- **Empty State** — Context-aware messages when no tasks match the current filter
+- **Empty State** — Context-aware messages when no tasks match the current filter or search
 - **Task Counter** — Live count of remaining tasks in the header
+- **Accessibility** — Screen reader support with proper roles, states, and labels
 
 ## Getting Started
 
@@ -34,37 +46,64 @@ Then:
 - **Android Emulator:** Press `a` in the terminal
 - **Physical Device:** Scan the QR code with Expo Go
 
+## Usage Guide
+
+| Action | How |
+|--------|-----|
+| Add a task | Type in the input field, select priority (H/M/L), tap "Add" |
+| Complete a task | Tap the circular checkbox |
+| Delete a task | Tap the "X" button or swipe left, then confirm |
+| Edit a task | Long-press the task text to enter inline edit mode |
+| Search tasks | Type in the search bar below the input |
+| Filter tasks | Tap All / Active / Done tabs |
+| Change priority | Tap H/M/L colored pills before adding a task |
+
 ## Project Structure
 
 ```text
 app/
-├── _layout.tsx          # Root layout with gesture handler and status bar
-└── index.tsx            # Main screen — owns all task state and handlers
+├── _layout.tsx              # Root layout: ThemeProvider, gesture handler, status bar
+└── index.tsx                # Main screen — consumes useTasks() hook
+hooks/
+└── useTasks.ts              # Custom hook: all task state, CRUD, persistence, search, haptics
+contexts/
+└── ThemeContext.tsx          # ThemeProvider + useTheme() for dark mode
 components/
-├── EmptyState.tsx       # Displayed when no tasks match the current filter
-├── FilterTabs.tsx       # All / Active / Done filter buttons
-├── TaskInput.tsx        # Text input with Add button and shake validation
-├── TaskItem.tsx         # Task row with checkbox, swipe-to-delete, and delete icon
-└── TaskList.tsx         # FlatList wrapper for rendering tasks
+├── EmptyState.tsx           # Displayed when no tasks match filter/search
+├── FilterTabs.tsx           # All / Active / Done filter buttons with counts
+├── SearchBar.tsx            # Search input with clear button
+├── TaskInput.tsx            # Text input + priority selector + Add button
+├── TaskItem.tsx             # Task row: priority dot, checkbox, inline edit, swipe-to-delete
+└── TaskList.tsx             # FlatList wrapper for rendering tasks
 types/
-└── task.ts              # Task interface and FilterType definitions
+└── task.ts                  # Task interface, Priority type, FilterType
 utils/
-└── generateId.ts        # Unique ID generator (no external dependencies)
+└── generateId.ts            # Unique ID generator (no external dependencies)
 constants/
-└── Colors.ts            # App color palette
+└── Colors.ts                # Light/Dark color palettes with priority colors
+docs/
+├── ARCHITECTURE.md          # Component tree, data flow, design decisions
+├── COMPONENTS.md            # Full component API reference
+└── CONTRIBUTING.md          # Git workflow, code standards, commit conventions
 ```
 
 ## Tech Stack
 
 - **React Native** with **Expo** (SDK 54)
-- **TypeScript**
+- **TypeScript** — strict mode enabled
 - **expo-router** — file-based routing
 - **React Native Gesture Handler** — swipe-to-delete gesture
 - **React Native Reanimated** — animation support
+- **@react-native-async-storage/async-storage** — persistent task storage
+- **expo-haptics** — tactile feedback on interactions
 
 ## Design Decisions
 
-- **Local state only** — All task state is managed via `useState` in the root screen component, passed down via props. No external state management libraries.
-- **Custom styling** — Built with React Native `StyleSheet` for full control and to demonstrate understanding of RN styling.
+- **Custom `useTasks()` hook** — All task state, CRUD operations, persistence, filtering, sorting, haptics, and delete confirmation encapsulated in one hook. The main screen is a thin UI shell.
+- **ThemeContext for dark mode** — React Context provides system-aware colors to all components. This is a cross-cutting UI concern, separate from task state management.
+- **AsyncStorage with `isLoaded` guard** — Tasks persist across restarts. A loading guard prevents overwriting stored data with empty initial state during hydration.
+- **Custom styling** — Built with React Native `StyleSheet` for full control and to demonstrate understanding of RN styling. No UI library dependencies.
 - **FlatList** — Used instead of ScrollView for virtualized rendering and proper list handling.
-- **No external dependencies for IDs** — Using `Date.now() + Math.random()` instead of a UUID library to keep the dependency tree minimal.
+- **Priority sorting** — Incomplete tasks sorted by priority (high first), then by date. Completed tasks sink to the bottom.
+- **No UUID library** — Using `Date.now() + Math.random()` to keep the dependency tree minimal.
+- **Accessibility first** — Checkbox and delete controls have proper `accessibilityRole`, `accessibilityState`, and `accessibilityLabel` for screen reader support.
